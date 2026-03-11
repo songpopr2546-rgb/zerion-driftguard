@@ -7,6 +7,23 @@ const API_BASE_X402 = "https://api.zerion.io/v1/x402";
 const DEFAULT_TX_LIMIT = 10;
 const API_KEY = process.env.ZERION_API_KEY || "";
 const USE_X402 = process.env.ZERION_X402 === "true";
+const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY || "";
+
+let _x402Fetch = null;
+async function getX402Fetch() {
+  if (_x402Fetch) return _x402Fetch;
+  if (!WALLET_PRIVATE_KEY) {
+    throw new Error("WALLET_PRIVATE_KEY is required for x402 mode. Set it as an environment variable.");
+  }
+  const { wrapFetchWithPayment, x402Client } = await import("@x402/fetch");
+  const { registerExactEvmScheme } = await import("@x402/evm/exact/client");
+  const { privateKeyToAccount } = await import("viem/accounts");
+  const signer = privateKeyToAccount(WALLET_PRIVATE_KEY);
+  const client = new x402Client();
+  registerExactEvmScheme(client, { signer });
+  _x402Fetch = wrapFetchWithPayment(fetch, client);
+  return _x402Fetch;
+}
 
 function print(value) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -27,7 +44,7 @@ function usage() {
       "zerion-cli wallet pnl <address> [--x402]",
       "zerion-cli chains list [--x402]"
     ],
-    env: ["ZERION_API_KEY", "ZERION_API_BASE (optional)", "ZERION_X402=true (use x402 pay-per-call)"],
+    env: ["ZERION_API_KEY", "ZERION_API_BASE (optional)", "ZERION_X402=true (use x402 pay-per-call)", "WALLET_PRIVATE_KEY (required for x402)"],
     x402: {
       description: "Pay $0.01 USDC per request on Base. No API key required.",
       docs: "https://developers.zerion.io/reference/x402"
@@ -72,13 +89,12 @@ async function fetchAPI(pathname, params = {}, useX402 = false) {
 
   const headers = { Accept: "application/json" };
 
-  // x402 uses the HTTP 402 protocol for payment - no auth header needed
-  // The agent's wallet handles the payment automatically
   if (!useX402) {
     headers.Authorization = basicAuthHeader(API_KEY);
   }
 
-  const response = await fetch(url, { headers });
+  const fetchFn = useX402 ? await getX402Fetch() : fetch;
+  const response = await fetchFn(url, { headers });
 
   const text = await response.text();
   let payload;
