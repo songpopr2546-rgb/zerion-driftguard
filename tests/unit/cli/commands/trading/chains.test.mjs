@@ -1,5 +1,6 @@
-// Live /chains/ endpoint tests. This endpoint is public (no API key required),
-// but it still hits the network — so the tests live here, not in unit/.
+// `zerion chains` reads the supported-chains list from a local viem
+// registry — no network, no API key, no auth of any kind. These tests
+// spawn the CLI but stay fully offline.
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -13,7 +14,7 @@ function run(args) {
     execFile(
       "node",
       [BIN, ...args],
-      { env: { ...process.env, ZERION_API_KEY: "" }, timeout: 15000 },
+      { env: { ...process.env, ZERION_API_KEY: "" }, timeout: 5000 },
       (error, stdout) => {
         resolve({ code: error?.code ?? 0, stdout });
       }
@@ -25,7 +26,7 @@ function parseJSON(str) {
   try { return JSON.parse(str); } catch { return null; }
 }
 
-describe("chains — live endpoint (no API key required)", () => {
+describe("chains — local list (no network, no API key)", () => {
   it("`zerion chains --json` returns chains array", async () => {
     const { code, stdout } = await run(["chains", "--json"]);
     assert.equal(code, 0);

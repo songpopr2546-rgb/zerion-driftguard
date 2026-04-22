@@ -39,7 +39,7 @@ Useful docs:
 
 **No API key needed.** Pay $0.01 USDC per request via the [x402 protocol](https://www.x402.org/). Supports EVM (Base) and Solana. The CLI handles the payment handshake automatically.
 
-> Pay-per-call applies to analytics commands only (`portfolio`, `positions`, `history`, `pnl`, `analyze`, `chains`). Trading commands (`swap`, `send`, `bridge`, `search`, …) always use an API key, even when `ZERION_X402` is set globally.
+> Pay-per-call applies to analytics commands only (`portfolio`, `positions`, `history`, `pnl`, `analyze`). Trading commands (`swap`, `send`, `bridge`, `search`, …) always use an API key, even when `ZERION_X402` is set globally. The `chains` command runs fully offline (local registry) and needs no auth at all.
 
 **Single key** — format is auto-detected:
 

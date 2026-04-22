@@ -179,7 +179,7 @@ zerion --version                         Show version
 | `SOLANA_RPC_URL` | No | Custom Solana RPC endpoint |
 | `ETH_RPC_URL` | No | Custom Ethereum RPC endpoint (ENS resolution) |
 
-> Pay-per-call (`--x402` / `--mpp` / `ZERION_X402` / `ZERION_MPP`) applies to analytics commands only. Trading commands (`swap`, `send`, `bridge`, `search`, `list-tokens`) always require `ZERION_API_KEY`.
+> Pay-per-call (`--x402` / `--mpp` / `ZERION_X402` / `ZERION_MPP`) applies to analytics commands only (`portfolio`, `positions`, `history`, `pnl`, `analyze`). Trading commands (`swap`, `send`, `bridge`, `search`, `list-tokens`) always require `ZERION_API_KEY`. The `chains` command reads a local registry and needs no auth at all.
 
 ## Supported chains
 
