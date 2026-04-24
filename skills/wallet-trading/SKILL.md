@@ -100,7 +100,7 @@ zerion analyze <name|address> --period 7d
 
 ## Off-chain signing — messages & typed data
 
-For SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport orders. Unattended when an agent token is active, interactive otherwise.
+For SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport orders, and Hyperliquid orders. Uses the agent token as the wallet passphrase — fully unattended once a token is configured.
 
 ```bash
 zerion sign-message "hello" --chain ethereum               # EIP-191 personal_sign
@@ -110,6 +110,8 @@ zerion sign-typed-data --data '<json>' --chain base        # EIP-712 (EVM only)
 zerion sign-typed-data --file permit.json                  # From file
 cat permit.json | zerion sign-typed-data                   # From stdin
 ```
+
+**No agent token yet?** On a TTY, the CLI asks `Want to setup an agent token for "<wallet>"? [Y/n]` and runs the `agent create-token` flow inline — the original command then continues with the fresh token. In non-TTY (CI / piped) it fails fast with a pointer to `zerion agent create-token`.
 
 Security: signing arbitrary messages or typed data can authorize unlimited token allowances. Only sign payloads whose domain and primaryType you recognize.
 

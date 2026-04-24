@@ -146,8 +146,8 @@ zerion chains                                             # List all supported c
 
 ### Agent operations — message & typed-data signing
 
-Use for off-chain authorizations: SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport/OpenSea orders.
-If an agent token is active, signing is unattended; otherwise the user is prompted for the wallet passphrase.
+Use for off-chain authorizations: SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport/OpenSea orders, Hyperliquid orders.
+Signing uses the active agent token as the wallet passphrase — fully unattended. Missing token on a TTY? The CLI offers to run `agent create-token` inline and then continues with the fresh token; missing token in CI fails fast.
 
 ```
 zerion sign-message <message> --chain <chain>              # EIP-191 (EVM) or raw ed25519 (Solana)
