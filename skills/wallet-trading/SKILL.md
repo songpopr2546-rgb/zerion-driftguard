@@ -100,7 +100,7 @@ zerion analyze <name|address> --period 7d
 
 ## Off-chain signing — messages & typed data
 
-For SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport orders, and Hyperliquid orders. Uses the agent token as the wallet passphrase — fully unattended once a token is configured.
+For SIWE login, EIP-2612 `permit`, Permit2 approvals, Seaport orders. Uses the agent token as the wallet passphrase — fully unattended once a token is configured.
 
 ```bash
 zerion sign-message "hello" --chain ethereum               # EIP-191 personal_sign
