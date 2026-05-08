@@ -25,16 +25,17 @@ Requires Node.js 20 or later.
 
 ## Agent skills
 
-Six skills ship in this repo (under [`./skills/`](./skills/)):
+Seven skills ship in this repo (under [`./skills/`](./skills/)):
 
-| Skill | What it does |
-|-------|--------------|
-| [`zerion`](./skills/zerion/SKILL.md) | Umbrella: install, authentication, routing to specific skills, chains reference |
-| [`zerion-analyze`](./skills/zerion-analyze/SKILL.md) | Portfolio, positions, history, PnL, analyze, token search, watchlist (read-only; supports x402 / MPP) |
-| [`zerion-trading`](./skills/zerion-trading/SKILL.md) | Swap, bridge, send tokens (on-chain actions; needs API key + agent token) |
-| [`zerion-sign`](./skills/zerion-sign/SKILL.md) | Off-chain signing — sign-message (EIP-191 / raw), sign-typed-data (EIP-712) |
-| [`zerion-wallet`](./skills/zerion-wallet/SKILL.md) | Wallet management — create, import, list, fund, backup, delete, sync |
-| [`zerion-agent-management`](./skills/zerion-agent-management/SKILL.md) | Agent tokens + policies (the autonomous-trading primitives) |
+| Skill | What it does | Source |
+|-------|--------------|--------|
+| [`zerion`](./skills/zerion/SKILL.md) | Umbrella: install, authentication, routing to specific skills, chains reference | Zerion |
+| [`zerion-analyze`](./skills/zerion-analyze/SKILL.md) | Portfolio, positions, history, PnL, analyze, token search, watchlist (read-only; supports x402 / MPP) | Zerion |
+| [`zerion-trading`](./skills/zerion-trading/SKILL.md) | Swap, bridge, send tokens (on-chain actions; needs API key + agent token) | Zerion |
+| [`zerion-sign`](./skills/zerion-sign/SKILL.md) | Off-chain signing — sign-message (EIP-191 / raw), sign-typed-data (EIP-712) | Zerion |
+| [`zerion-wallet`](./skills/zerion-wallet/SKILL.md) | Wallet management — create, import, list, fund, backup, delete, sync | Zerion |
+| [`zerion-agent-management`](./skills/zerion-agent-management/SKILL.md) | Agent tokens + policies (the autonomous-trading primitives) | Zerion |
+| [`zerion-sendai-ideas`](./skills/zerion-sendai-ideas/SKILL.md) | Crypto idea discovery, validation, competitive landscape, DeFi TVL research | Adapted from [sendaifun/solana-new](https://github.com/sendaifun/solana-new/tree/main/skills/idea) (MIT) |
 
 Skills follow the [agentskills.io](https://agentskills.io) open standard — a single `skills/` tree powers every supported host.
 
