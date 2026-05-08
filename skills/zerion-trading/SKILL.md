@@ -74,37 +74,57 @@ zerion swap tokens monad                 # filter to Monad
 
 Move (and optionally swap) tokens **between chains**. Bridge with the same token on both sides for a pure transfer; pass a different `to-token` for bridge + swap.
 
-```bash
-# zerion bridge <from-chain> <from-token> <amount> <to-chain> <to-token>
+**Provider selection:**
 
-# Same-token bridge between EVM chains
+| Flag | Behavior |
+|---|---|
+| _(none)_, multi-offer | List every quote (provider, output, time, fee) and exit. **No transaction is signed.** |
+| _(none)_, single-offer | Auto-execute the only available route (no choice to make). |
+| `--cheapest` | Execute the highest-output offer (matches the legacy auto-execute behavior). |
+| `--fast` | Execute the lowest-time offer (`estimated_time_seconds`). Falls back to `--cheapest` if no offer carries time data. |
+
+Rules:
+- `--fast` and `--cheapest` together is rejected.
+- Supported flag forms: bare `--fast` (must be last on the command line so `parseFlags` doesn't consume the next positional as the value), `--fast=true` / `--fast=false`, and `--no-fast` (equivalent to `--fast=false`). Same shape applies to `--cheapest`. Anything else (e.g. `--fast=cheapest`, `--fast arbitrum`) errors with `invalid_flag_value`.
+- `--slippage` is validated: must be a number between 0 and 100. `--slippage=abc`, `--slippage=2abc`, `--slippage=-5`, `--slippage=200` all reject with `invalid_slippage`. Strict numeric parse — no partial-string matches.
+
+```bash
+# zerion bridge <from-chain> <from-token> <amount> <to-chain> <to-token> [--fast | --cheapest]
+
+# List all bridge providers (no execution) — agent can compare and choose
 zerion bridge base USDC 5 arbitrum USDC
-zerion bridge ethereum USDC 100 polygon USDC
-zerion bridge base USDC 10 monad USDC
+
+# Same-token bridge — execute the cheapest (highest output) route
+zerion bridge base USDC 5 arbitrum USDC --cheapest
+zerion bridge ethereum USDC 100 polygon USDC --cheapest
+zerion bridge base USDC 10 monad USDC --cheapest
+
+# Execute the fastest route (lowest estimated_time_seconds)
+zerion bridge base USDC 5 arbitrum USDC --fast
 
 # Bridge + swap on destination
-zerion bridge base USDC 5 arbitrum ETH
-zerion bridge base USDC 5 monad MON
+zerion bridge base USDC 5 arbitrum ETH --cheapest
+zerion bridge base USDC 5 monad MON --cheapest
 
 # Native token bridge
-zerion bridge base ETH 0.001 optimism ETH
+zerion bridge base ETH 0.001 optimism ETH --cheapest
 
 # Bridge EVM → Solana (mnemonic wallet has both accounts → no extra flag needed)
-zerion bridge ethereum USDC 50 solana USDC
+zerion bridge ethereum USDC 50 solana USDC --cheapest
 
 # Bridge Solana → EVM
-zerion bridge solana USDC 50 ethereum USDC
+zerion bridge solana USDC 50 ethereum USDC --cheapest
 
 # Cross-format bridge to a different local wallet
-zerion bridge ethereum USDC 50 solana USDC --to-wallet <sol-wallet>
-zerion bridge solana USDC 50 ethereum USDC --to-wallet <evm-wallet>
+zerion bridge ethereum USDC 50 solana USDC --to-wallet <sol-wallet> --cheapest
+zerion bridge solana USDC 50 ethereum USDC --to-wallet <evm-wallet> --cheapest
 
 # Bridge to a raw destination address (must match the target chain's format)
-zerion bridge ethereum USDC 50 solana USDC --to-address <solana-pubkey>
-zerion bridge solana USDC 50 ethereum USDC --to-address 0x...
+zerion bridge ethereum USDC 50 solana USDC --to-address <solana-pubkey> --cheapest
+zerion bridge solana USDC 50 ethereum USDC --to-address 0x... --cheapest
 
-# Slippage / timeout flags work the same as swap
-zerion bridge base USDC 5 arbitrum ETH --slippage 3 --timeout 300
+# Slippage / timeout flags work the same as swap (strategy flag still last)
+zerion bridge base USDC 5 arbitrum ETH --slippage 3 --timeout 300 --cheapest
 ```
 
 ### Cross-chain destination rules
