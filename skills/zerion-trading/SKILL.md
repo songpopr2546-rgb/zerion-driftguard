@@ -45,6 +45,7 @@ Convert one token to another **on the same chain**. For cross-chain conversion u
 zerion swap base 1 USDC ETH
 zerion swap ethereum 0.1 ETH USDC
 zerion swap arbitrum 100 USDC DAI
+zerion swap monad 1 USDC MON
 
 # Solana same-chain swap
 zerion swap solana 0.1 SOL USDC
@@ -66,6 +67,7 @@ Tokens accepted as: symbol (`ETH`, `USDC`, `SOL`), 0x address (EVM), Solana mint
 zerion swap tokens                       # all chains
 zerion swap tokens base                  # filter to Base
 zerion swap tokens solana                # filter to Solana
+zerion swap tokens monad                 # filter to Monad
 ```
 
 ## Bridge (cross-chain)
@@ -78,9 +80,11 @@ Move (and optionally swap) tokens **between chains**. Bridge with the same token
 # Same-token bridge between EVM chains
 zerion bridge base USDC 5 arbitrum USDC
 zerion bridge ethereum USDC 100 polygon USDC
+zerion bridge base USDC 10 monad USDC
 
 # Bridge + swap on destination
 zerion bridge base USDC 5 arbitrum ETH
+zerion bridge base USDC 5 monad MON
 
 # Native token bridge
 zerion bridge base ETH 0.001 optimism ETH
@@ -123,6 +127,8 @@ Native + ERC-20 + native SOL transfers. `--chain` is auto-inferred from the reci
 # EVM: native + ERC-20
 zerion send ETH 0.01 --to 0x... --chain base
 zerion send USDC 10 --to vitalik.eth --chain ethereum
+zerion send MON 0.5 --to 0x... --chain monad
+zerion send USDC 10 --to 0x... --chain monad
 
 # Solana: native SOL (chain auto-detected from base58 recipient)
 zerion send SOL 0.1 --to 2Nsnn…
@@ -136,6 +142,7 @@ Recipients accepted: 0x address (EVM), ENS name (resolved at send time), Solana 
 ```bash
 zerion search <query>                    # by name, symbol, or address
 zerion search PEPE --chain ethereum
+zerion search MON --chain monad
 zerion search "uniswap" --limit 5
 ```
 
