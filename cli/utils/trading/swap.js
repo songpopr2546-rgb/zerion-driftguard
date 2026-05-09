@@ -404,24 +404,26 @@ async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { ti
       process.stderr.write(`Existing allowance covers this swap — skipping approval.\n`);
     } else {
       const decodedApproval = decodeApproveCalldata(approveTx.data);
+      const approvePolicyMetadata = quotePolicyMetadata(quote, "approve", {
+        ...policyMetadata,
+        approval: decodedApproval
+          ? { spender: decodedApproval.spender, amount: decodedApproval.amount.toString() }
+          : null,
+      });
       await enforceExecutablePolicies({
         to: approveTx.to,
         value: approveTx.value || "0",
         data: approveTx.data,
         chain: zerionChainId,
-      }, walletName, quotePolicyMetadata(quote, "approve", {
-        ...policyMetadata,
-        approval: decodedApproval
-          ? { spender: decodedApproval.spender, amount: decodedApproval.amount.toString() }
-          : null,
-      }));
+      }, walletName, approvePolicyMetadata);
 
       process.stderr.write(`Approving ${quote.from.symbol} for swap...\n`);
       const { signedTxHex, client, tx: signedApprove } = await signSwapTransaction(
         approveTx,
         zerionChainId,
         walletName,
-        passphrase
+        passphrase,
+        { policyMetadata: approvePolicyMetadata }
       );
       approvalNonce = signedApprove.nonce;
       const approvalResult = await broadcastAndWait(client, signedTxHex, { timeout });
@@ -443,12 +445,13 @@ async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { ti
   // still report the pre-approval nonce as "latest" for a few seconds. Force
   // the next nonce locally instead of trusting the node.
   const swapTx = quote.transactionSwap;
+  const swapPolicyMetadata = quotePolicyMetadata(quote, "swap", policyMetadata);
   await enforceExecutablePolicies({
     to: swapTx.to,
     value: swapTx.value || "0",
     data: swapTx.data,
     chain: zerionChainId,
-  }, walletName, quotePolicyMetadata(quote, "swap", policyMetadata));
+  }, walletName, swapPolicyMetadata);
 
   const swapNonceOverride = approvalNonce != null ? approvalNonce + 1 : undefined;
   const { signedTxHex, client } = await signSwapTransaction(
@@ -456,7 +459,7 @@ async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { ti
     zerionChainId,
     walletName,
     passphrase,
-    { nonceOverride: swapNonceOverride }
+    { nonceOverride: swapNonceOverride, policyMetadata: swapPolicyMetadata }
   );
 
   // 3. Broadcast and wait for source-chain confirmation

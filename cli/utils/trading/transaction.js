@@ -12,6 +12,7 @@ import {
 } from "viem";
 import { resolveChain } from "../chain/catalog.js";
 import * as ows from "../wallet/keystore.js";
+import { preapproveExecutablePolicyTransaction } from "./guards.js";
 
 const ERC20_APPROVE_ABI = parseAbi([
   "function approve(address spender, uint256 amount) returns (bool)",
@@ -66,7 +67,7 @@ export async function getPublicClient(zerionChainId) {
  *   resolves, so we track it locally instead of trusting the node.
  * @returns {{ signedTxHex: string, client: object, tx: object }}
  */
-export async function signSwapTransaction(swapTx, zerionChainId, walletName, passphrase, { nonceOverride } = {}) {
+export async function signSwapTransaction(swapTx, zerionChainId, walletName, passphrase, { nonceOverride, policyMetadata } = {}) {
   if (!swapTx) {
     throw new Error("No transaction data from swap API — the quote may require more balance or the pair is unsupported");
   }
@@ -95,7 +96,7 @@ export async function signSwapTransaction(swapTx, zerionChainId, walletName, pas
     nonce,
   };
 
-  const signedTxHex = await signAndSerialize(tx, zerionChainId, walletName, passphrase);
+  const signedTxHex = await signAndSerialize(tx, zerionChainId, walletName, passphrase, { policyMetadata });
   return { signedTxHex, client, tx };
 }
 
@@ -103,9 +104,15 @@ export async function signSwapTransaction(swapTx, zerionChainId, walletName, pas
  * Sign a transaction object with OWS and return the serialized signed hex.
  * Centralizes the serialize -> sign -> split-signature -> re-serialize pattern.
  */
-export async function signAndSerialize(tx, zerionChainId, walletName, passphrase) {
+export async function signAndSerialize(tx, zerionChainId, walletName, passphrase, { policyMetadata } = {}) {
   const config = await getChainConfig(zerionChainId);
   const unsignedTxHex = serializeTransaction(tx);
+  if (policyMetadata && Object.keys(policyMetadata).length > 0) {
+    await preapproveExecutablePolicyTransaction({
+      raw_hex: unsignedTxHex,
+      chain: zerionChainId,
+    }, walletName, policyMetadata);
+  }
   const signResult = ows.signEvmTransaction(walletName, unsignedTxHex, passphrase, config.caip2);
 
   const sigHex = signResult.signature;

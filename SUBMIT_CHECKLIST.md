@@ -8,11 +8,20 @@ Use this before submitting to Superteam Earn and Colosseum. The code is ready; t
 - Colosseum project profile URL.
 - Loom/demo video URL.
 - Real onchain transaction hash from `zerion agent run-driftguard ... --execute`.
-- Explorer URL for the transaction, preferably BaseScan when using Base.
+- Explorer URL for the transaction, BscScan for the recorded BNB Smart Chain demo.
 - Screenshot or terminal clip showing `policy_denied` for an out-of-scope action.
 - Screenshot or terminal clip showing `agent show-policy <policy-id>`.
 
 ## Real Transaction Run
+
+Recorded evidence from the live BNB Smart Chain demo:
+
+- Swap tx: `0x24b0ab36fd205d4e105a1ccb2c75a84538b7bc65e53e9cb3ded967f417112579`
+- Swap explorer: https://bscscan.com/tx/0x24b0ab36fd205d4e105a1ccb2c75a84538b7bc65e53e9cb3ded967f417112579
+- Approval tx: `0xfb78a3a18e0eb7639cc2ec43cc000875437f2d04c4e17fa69a619be31e98cd90`
+- Approval explorer: https://bscscan.com/tx/0xfb78a3a18e0eb7639cc2ec43cc000875437f2d04c4e17fa69a619be31e98cd90
+- Wallet: `0xdd6feE67db4133FbC8918f874812c9510ce07c15`
+- Policy denial command returned `policy_denied`: `node cli/zerion.js send BNB 0.0001 --wallet driftguard-demo --chain binance-smart-chain --to 0x0000000000000000000000000000000000000001`
 
 ```bash
 export ZERION_API_KEY="zk_..."
@@ -21,18 +30,18 @@ node cli/zerion.js wallet create --name driftguard-demo
 node cli/zerion.js wallet fund --wallet driftguard-demo
 ```
 
-Fund the Base EVM address with:
+Fund the BNB Smart Chain EVM address with:
 
-- a little ETH for gas
-- enough USDC and/or ETH to create visible drift from `USDC=60,ETH=40`
+- a little BNB for gas
+- enough USDT and/or BNB to create visible drift from `USDT=60,BNB=40`
 
 Then:
 
 ```bash
 node cli/zerion.js agent create-driftguard-policy \
-  --name base-driftguard \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --name bsc-driftguard \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5 \
   --daily-limit-usd 15 \
   --expires 7d
@@ -44,14 +53,14 @@ node cli/zerion.js agent create-token \
 
 node cli/zerion.js agent run-driftguard \
   --wallet driftguard-demo \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5
 
 node cli/zerion.js agent run-driftguard \
   --wallet driftguard-demo \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5 \
   --execute
 ```

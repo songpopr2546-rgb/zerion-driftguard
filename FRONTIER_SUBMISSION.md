@@ -6,7 +6,7 @@ DriftGuard: a policy-bound autonomous onchain rebalancing agent for Zerion CLI
 
 ## Project Description
 
-DriftGuard turns the Zerion CLI into an autonomous portfolio rebalancing agent. It monitors a wallet on a chosen chain, compares live Zerion portfolio data against target allocations, chooses one bounded rebalance action, requests an executable Zerion API swap quote, and signs/broadcasts the transaction only when a scoped DriftGuard policy approves it.
+DriftGuard turns the Zerion CLI into an autonomous portfolio rebalancing agent. It monitors a wallet on a chosen chain, compares live Zerion portfolio data against target allocations, chooses one bounded rebalance action, requests an executable Zerion API swap quote, and signs/broadcasts the transaction only when a scoped DriftGuard policy approves it. The recorded demo executes on BNB Smart Chain with a USDT -> BNB rebalance.
 
 The core thesis: autonomous agents should not be god-mode wallets. DriftGuard ships with a custom executable policy that fails closed unless the action is a Zerion API quote from the DriftGuard agent, the chain and token pair are allowed, the per-trade USD cap holds, the daily USD cap holds, and bridges are explicitly enabled.
 
@@ -26,10 +26,21 @@ The core thesis: autonomous agents should not be god-mode wallets. DriftGuard sh
 | Wallet/execution layer on forked CLI | Uses existing Zerion wallet, agent token, policy, swap signing, and broadcast layers |
 | Any interface | CLI autonomous agent: `zerion agent run-driftguard` |
 | At least one scoped policy | `zerion agent create-driftguard-policy` creates chain lock, expiry, token allowlist, per-trade cap, daily cap, bridge gate |
-| Real onchain transaction | Run `zerion agent run-driftguard ... --execute`; output includes tx hash |
+| Real onchain transaction | Executed on BNB Smart Chain: `0x24b0ab36fd205d4e105a1ccb2c75a84538b7bc65e53e9cb3ded967f417112579` |
 | Swaps route through Zerion API | `run-driftguard` calls `getSwapQuote`, which calls Zerion `/swap/quotes/` |
-| Demo/live demo | Use the script below; record terminal + explorer transaction |
+| Demo/live demo | Use the script below; record terminal + BscScan transaction |
 | Open source | Publish this fork as a public GitHub repository |
+
+## Actual Transaction Evidence
+
+- Swap tx: `0x24b0ab36fd205d4e105a1ccb2c75a84538b7bc65e53e9cb3ded967f417112579`
+- Swap explorer: https://bscscan.com/tx/0x24b0ab36fd205d4e105a1ccb2c75a84538b7bc65e53e9cb3ded967f417112579
+- Approval tx: `0xfb78a3a18e0eb7639cc2ec43cc000875437f2d04c4e17fa69a619be31e98cd90`
+- Approval explorer: https://bscscan.com/tx/0xfb78a3a18e0eb7639cc2ec43cc000875437f2d04c4e17fa69a619be31e98cd90
+- Wallet: `0xdd6feE67db4133FbC8918f874812c9510ce07c15`
+- Executed decision: `swap 3.222671 USDT to BNB`
+- Post-trade position snapshot: `6.767329 USDT` and `0.0069230200251423 BNB`
+- Policy denial proof: `zerion send BNB 0.0001 --wallet driftguard-demo --chain binance-smart-chain --to 0x0000000000000000000000000000000000000001` returns `policy_denied`.
 
 ## Demo Script
 
@@ -48,15 +59,15 @@ zerion wallet create --name driftguard-demo
 zerion wallet fund --wallet driftguard-demo
 ```
 
-Fund the Base address with a small amount of ETH for gas and enough target tokens to create visible drift, for example USDC overweight versus ETH.
+Fund the BNB Smart Chain address with a small amount of BNB for gas and enough target tokens to create visible drift, for example USDT overweight versus BNB.
 
 ### 3. Create the DriftGuard policy
 
 ```bash
 zerion agent create-driftguard-policy \
-  --name base-driftguard \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --name bsc-driftguard \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5 \
   --daily-limit-usd 15 \
   --expires 7d
@@ -76,8 +87,8 @@ zerion agent create-token \
 ```bash
 zerion agent run-driftguard \
   --wallet driftguard-demo \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5
 ```
 
@@ -94,20 +105,20 @@ Show the JSON:
 ```bash
 zerion agent run-driftguard \
   --wallet driftguard-demo \
-  --chain base \
-  --targets USDC=60,ETH=40 \
+  --chain binance-smart-chain \
+  --targets USDT=60,BNB=40 \
   --max-trade-usd 5 \
   --execute
 ```
 
-Show the printed transaction hash on a Base block explorer.
+Show the printed transaction hash on BscScan.
 
 ### 7. Show policy denial
 
 Attempt an action outside the DriftGuard envelope:
 
 ```bash
-zerion send ETH 0.001 --wallet driftguard-demo --chain base --to 0x0000000000000000000000000000000000000001
+zerion send BNB 0.0001 --wallet driftguard-demo --chain binance-smart-chain --to 0x0000000000000000000000000000000000000001
 ```
 
 Expected result: `policy_denied` because the DriftGuard policy only allows DriftGuard Zerion API quote actions.

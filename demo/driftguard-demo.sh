@@ -8,8 +8,8 @@ set -euo pipefail
 : "${ZERION_API_KEY:?Set ZERION_API_KEY=zk_... first}"
 
 WALLET="${DRIFTGUARD_WALLET:-driftguard-demo}"
-CHAIN="${DRIFTGUARD_CHAIN:-base}"
-TARGETS="${DRIFTGUARD_TARGETS:-USDC=60,ETH=40}"
+CHAIN="${DRIFTGUARD_CHAIN:-binance-smart-chain}"
+TARGETS="${DRIFTGUARD_TARGETS:-USDT=60,BNB=40}"
 MAX_TRADE_USD="${DRIFTGUARD_MAX_TRADE_USD:-5}"
 DAILY_LIMIT_USD="${DRIFTGUARD_DAILY_LIMIT_USD:-15}"
 EXPIRES="${DRIFTGUARD_EXPIRES:-7d}"
@@ -57,7 +57,7 @@ node cli/zerion.js agent run-driftguard \
 
 echo
 echo "== 4. Policy denial proof =="
-node cli/zerion.js send ETH 0.001 \
+node cli/zerion.js send BNB 0.0001 \
   --wallet "${WALLET}" \
   --chain "${CHAIN}" \
   --to 0x0000000000000000000000000000000000000001 || true

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { check } from "#zerion/policies/driftguard.mjs";
+import { check, rememberPreapprovedTransaction } from "#zerion/policies/driftguard.mjs";
 
 let stateDir;
 
@@ -79,5 +79,36 @@ describe("DriftGuard executable policy", () => {
 
     const swap = check(ctx({ metadata: { inputAmountUsd: 10 } }));
     assert.equal(swap.allow, true);
+  });
+
+  it("allows the signer to consume a metadata-less preapproved transaction once", () => {
+    const tx = { to: "0xRouter", value: "0", data: "0x1234", chain: "base" };
+    const precheck = check(ctx({ transaction: tx }));
+    assert.equal(precheck.allow, true);
+
+    const signerCheck = check(ctx({
+      transaction: tx,
+      metadata: { agent: undefined, source: undefined, action: undefined },
+    }));
+    assert.equal(signerCheck.allow, true);
+    assert.match(signerCheck.reason, /preapproved DriftGuard/);
+
+    const replay = check(ctx({
+      transaction: tx,
+      metadata: { agent: undefined, source: undefined, action: undefined },
+    }));
+    assert.equal(replay.allow, false);
+  });
+
+  it("matches OWS raw transaction preapprovals", () => {
+    const rawTx = { raw_hex: "0xabc123", chain: "eip155:56" };
+    const stored = rememberPreapprovedTransaction(ctx({ transaction: rawTx }));
+    assert.equal(stored, true);
+
+    const signerCheck = check(ctx({
+      transaction: { raw_hex: "abc123", chain: "eip155:56" },
+      metadata: { agent: undefined, source: undefined, action: undefined },
+    }));
+    assert.equal(signerCheck.allow, true);
   });
 });

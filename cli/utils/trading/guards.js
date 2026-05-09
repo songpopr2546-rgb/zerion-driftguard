@@ -158,6 +158,52 @@ export async function enforceExecutablePolicies(txInfo, targetWallet, metadata =
 }
 
 /**
+ * Record an exact transaction preapproval for OWS signer policy checks.
+ * This is intentionally called only after `enforceExecutablePolicies` has
+ * already approved the richer DriftGuard metadata for the same action.
+ */
+export async function preapproveExecutablePolicyTransaction(txInfo, targetWallet, metadata = {}) {
+  const walletName = targetWallet || getConfigValue("defaultWallet");
+  if (!walletName) return;
+
+  const tokens = listAgentTokens();
+  const activeMeta = getAgentTokenMetaForWallet(walletName);
+  const activeKey = activeMeta?.id
+    ? tokens.find((t) => t.id === activeMeta.id)
+    : tokens
+      .filter((t) => {
+        const wid = t.walletIds?.[0];
+        return wid && getWalletNameById(wid) === walletName;
+      })
+      .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))[0];
+  if (!activeKey?.policyIds?.length) return;
+
+  const ctx = { transaction: txInfo, metadata };
+
+  for (const pid of activeKey.policyIds) {
+    let policy;
+    try {
+      policy = getPolicy(pid);
+    } catch {
+      continue;
+    }
+    const scripts = policy.config?.scripts || [];
+    for (const script of scripts) {
+      const resolved = resolve(script);
+      if (!resolved.startsWith(POLICIES_DIR)) continue;
+      try {
+        const mod = await import(pathToFileURL(resolved).href);
+        if (typeof mod.rememberPreapprovedTransaction === "function") {
+          await Promise.resolve(mod.rememberPreapprovedTransaction({ ...ctx, policy_config: policy.config }));
+        }
+      } catch {
+        // OWS still fails closed if the raw transaction preapproval is absent.
+      }
+    }
+  }
+}
+
+/**
  * Parse and validate a --timeout flag value.
  * @param {string|undefined} value - raw flag value
  * @returns {number|undefined} parsed seconds, or undefined if not provided
