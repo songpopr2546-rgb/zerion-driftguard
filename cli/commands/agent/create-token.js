@@ -49,7 +49,13 @@ export default async function agentCreateToken(args, flags) {
 
   try {
     const result = ows.createAgentToken(name, walletName, passphrase, flags.expires, policyIds);
-    saveAgentToken(walletName, result.token);
+    saveAgentToken(walletName, result.token, {
+      id: result.id,
+      name: result.name,
+      wallet: walletName,
+      policyIds,
+      createdAt: new Date().toISOString(),
+    });
     setConfigValue("defaultWallet", walletName);
 
     process.stderr.write(

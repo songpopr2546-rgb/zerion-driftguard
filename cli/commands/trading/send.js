@@ -187,7 +187,13 @@ export default async function send(args, flags) {
       tx = { ...baseTx, to: tokenAddress, value: 0n, data, gas };
     }
 
-    await enforceExecutablePolicies({ to: tx.to, value: tx.value, data: tx.data });
+    await enforceExecutablePolicies({ to: tx.to, value: tx.value, data: tx.data, chain }, walletName, {
+      source: "zerion_cli",
+      action: "send",
+      chain,
+      token: resolved.symbol,
+      amount,
+    });
     const signedTxHex = await signAndSerialize(tx, chain, walletName, passphrase);
     const timeout = parseTimeout(flags.timeout);
     const result = await broadcastAndWait(client, signedTxHex, { timeout });
@@ -229,6 +235,18 @@ async function sendOnSolana({ token, amount, to, flags }) {
 
   try {
     const passphrase = await requireAgentToken("for trading", walletName);
+    await enforceExecutablePolicies({
+      to,
+      value: amount,
+      data: "solana-system-transfer",
+      chain: "solana",
+    }, walletName, {
+      source: "zerion_cli",
+      action: "send",
+      chain: "solana",
+      token: "SOL",
+      amount,
+    });
     const result = await sendSolanaNative({
       from: address,
       to,

@@ -1,6 +1,6 @@
 ---
 name: zerion-agent-management
-description: "Manage Zerion agent tokens and security policies — the primitives for autonomous trading and signing. Create / list / use / revoke agent tokens; create / list / show / delete policies (chain locks, allowlists, transfer/approval gates, expiry). Use whenever the user asks to set up an agent token, configure a policy, or enable autonomous trading. Required by `zerion-trading` and `zerion-sign`."
+description: "Manage Zerion agent tokens and security policies — the primitives for autonomous trading and signing. Create / list / use / revoke agent tokens; create / list / show / delete policies including DriftGuard policies (chain locks, allowlists, transfer/approval gates, spend caps, expiry). Use whenever the user asks to set up an agent token, configure a policy, or enable autonomous trading. Required by `zerion-trading`, `zerion-sign`, and `zerion-driftguard`."
 license: MIT
 allowed-tools: Bash
 ---
@@ -95,6 +95,14 @@ zerion agent create-policy --name strict \
   --expires 7d \
   --deny-transfers \
   --deny-approvals
+
+# DriftGuard policy — autonomous rebalancing with spend caps
+zerion agent create-driftguard-policy --name base-driftguard \
+  --chain base \
+  --targets USDC=60,ETH=40 \
+  --max-trade-usd 5 \
+  --daily-limit-usd 15 \
+  --expires 7d
 ```
 
 ### Delete a policy
@@ -114,6 +122,16 @@ Tokens that referenced the deleted policy will no longer pass that rule check.
 | `--deny-transfers` | Block raw native transfers (`zerion send` of native asset) |
 | `--deny-approvals` | Block ERC-20 `approve` calls |
 | `--allowlist <addrs>` | Only allow interaction with listed contract addresses (comma-separated) |
+
+DriftGuard policy-only flags:
+
+| Flag | Effect |
+|------|--------|
+| `--targets <symbol=pct,...>` | Target allocation, must sum to 100 |
+| `--max-trade-usd <amount>` | Maximum USD notional per rebalance |
+| `--daily-limit-usd <amount>` | Maximum USD notional per UTC day |
+| `--allowed-tokens <symbols>` | Optional token allowlist, defaults to target symbols |
+| `--allow-bridges` | Permit cross-chain actions. Omitted by default for same-chain safety |
 
 Policies execute as locally-spawned scripts (`policies/*.mjs` in the CLI repo). They run on every signing attempt before the transaction is built.
 

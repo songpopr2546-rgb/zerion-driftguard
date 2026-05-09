@@ -36,6 +36,7 @@ All skills live under [`./skills/`](./skills/) and follow the [agentskills.io](h
 | [`zerion`](./skills/zerion/SKILL.md) | Umbrella: install, authentication, routing to specific skills, chains reference |
 | [`zerion-analyze`](./skills/zerion-analyze/SKILL.md) | Portfolio, positions, history, PnL, analyze, token search, watchlist (read-only; supports x402 / MPP) |
 | [`zerion-trading`](./skills/zerion-trading/SKILL.md) | Swap, bridge, send tokens (on-chain actions; needs API key + agent token) |
+| [`zerion-driftguard`](./skills/zerion-driftguard/SKILL.md) | Autonomous policy-bound rebalancer that executes Zerion API swap quotes under per-trade and daily caps |
 | [`zerion-sign`](./skills/zerion-sign/SKILL.md) | Off-chain signing — sign-message (EIP-191 / raw), sign-typed-data (EIP-712) |
 | [`zerion-wallet`](./skills/zerion-wallet/SKILL.md) | Wallet management — create, import, list, fund, backup, delete, sync |
 | [`zerion-agent-management`](./skills/zerion-agent-management/SKILL.md) | Agent tokens + policies (the autonomous-trading primitives) |
@@ -276,6 +277,7 @@ Restrict what an agent token can do — chains, expiry, transfers, approvals, al
 | Command | Description | Example |
 |---------|-------------|---------|
 | `zerion agent create-policy --name <policy>` | Create security policy (flags below) | `zerion agent create-policy --name safe-base --chains base --expires 24h --deny-transfers` |
+| `zerion agent create-driftguard-policy --name <policy>` | Create a DriftGuard policy with chain, token, per-trade, daily, bridge, and expiry limits | `zerion agent create-driftguard-policy --name base-driftguard --chain base --targets USDC=60,ETH=40 --max-trade-usd 5 --daily-limit-usd 15 --expires 7d` |
 | `zerion agent list-policies` | List all policies | `zerion agent list-policies` |
 | `zerion agent show-policy <id>` | Show policy details | `zerion agent show-policy safe-base` |
 | `zerion agent delete-policy <id>` | Delete a policy | `zerion agent delete-policy safe-base` |
@@ -289,6 +291,56 @@ Policy flags:
 | `--deny-transfers` | Block raw ETH/native transfers |
 | `--deny-approvals` | Block ERC-20 approval calls |
 | `--allowlist <addresses>` | Only allow listed contract/wallet addresses |
+
+### DriftGuard Autonomous Agent
+
+DriftGuard is the competition-grade autonomous agent surface: it monitors a wallet's target allocation, decides when drift is large enough to trade, fetches an executable same-chain swap quote from the Zerion API, and signs only when a DriftGuard executable policy approves the action.
+
+For the Frontier submission package, see [`FRONTIER_SUBMISSION.md`](./FRONTIER_SUBMISSION.md) and [`SUBMIT_CHECKLIST.md`](./SUBMIT_CHECKLIST.md). The repeatable terminal demo lives in [`demo/driftguard-demo.sh`](./demo/driftguard-demo.sh).
+
+```bash
+# 1. Create a tight policy.
+zerion agent create-driftguard-policy \
+  --name base-driftguard \
+  --chain base \
+  --targets USDC=60,ETH=40 \
+  --max-trade-usd 5 \
+  --daily-limit-usd 15 \
+  --expires 7d
+
+# 2. Attach it to a wallet-bound agent token.
+zerion agent create-token \
+  --name driftguard-bot \
+  --wallet trading-bot \
+  --policy <policy-id>
+
+# 3. Dry run: live positions + live Zerion quote, no signature.
+zerion agent run-driftguard \
+  --wallet trading-bot \
+  --chain base \
+  --targets USDC=60,ETH=40 \
+  --max-trade-usd 5
+
+# 4. Execute one real on-chain rebalance.
+zerion agent run-driftguard \
+  --wallet trading-bot \
+  --chain base \
+  --targets USDC=60,ETH=40 \
+  --max-trade-usd 5 \
+  --execute
+
+# 5. Run autonomously on a cadence.
+zerion agent run-driftguard \
+  --wallet trading-bot \
+  --chain base \
+  --targets USDC=60,ETH=40 \
+  --max-trade-usd 5 \
+  --interval 15m \
+  --max-runs 96 \
+  --execute
+```
+
+The executable policy receives signed quote metadata, not just opaque calldata. It fails closed unless the action is a DriftGuard Zerion API quote, the chain and token pair are allowed, the per-trade and daily USD caps hold, and bridging is explicitly enabled.
 
 ### Watchlist
 

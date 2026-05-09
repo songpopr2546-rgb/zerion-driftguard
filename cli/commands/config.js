@@ -3,7 +3,7 @@ import { print, printError } from "../utils/common/output.js";
 
 const VALID_KEYS = ["apiKey", "defaultWallet", "slippage", "defaultChain"];
 const SENSITIVE_KEYS = new Set(["apiKey"]);
-const INTERNAL_KEYS = new Set(["walletOrigins", "agentTokens"]);
+const INTERNAL_KEYS = new Set(["walletOrigins", "agentTokens", "agentTokenMeta"]);
 
 function redact(key, val) {
   if (!SENSITIVE_KEYS.has(key) || !val) return val;

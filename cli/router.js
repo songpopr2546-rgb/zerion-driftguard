@@ -65,6 +65,8 @@ function printUsage() {
     },
     agent_policies: {
       "agent create-policy --name <policy>": "Create security policy (see policy flags below)",
+      "agent create-driftguard-policy --name <policy> --chain base --targets USDC=60,ETH=40": "Create a DriftGuard policy with spend caps, token allowlist, daily cap, and expiry",
+      "agent run-driftguard --wallet <wallet> --chain base --targets USDC=60,ETH=40 --execute": "Autonomously rebalance a wallet through Zerion API quotes under policy limits",
       "agent list-policies": "List all policies",
       "agent show-policy <id>": "Show policy details",
       "agent delete-policy <id>": "Delete a policy",
@@ -105,6 +107,9 @@ function printUsage() {
       "--deny-transfers": "Block raw ETH/native transfers",
       "--deny-approvals": "Block ERC-20 approval calls",
       "--allowlist <addresses>": "Only allow interaction with listed addresses",
+      "--max-trade-usd <amount>": "DriftGuard per-trade USD cap",
+      "--daily-limit-usd <amount>": "DriftGuard daily USD cap",
+      "--targets <symbol=pct,...>": "DriftGuard target allocation, must sum to 100",
     },
     env: {
       "ZERION_API_KEY": "API key (get at dashboard.zerion.io)",

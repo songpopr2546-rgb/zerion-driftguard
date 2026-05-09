@@ -1,6 +1,6 @@
 ---
 name: zerion
-description: "Crypto wallet API + CLI for AI agents — install, authentication, and routing to specific Zerion capabilities. Use this skill for setup or to learn which `zerion-*` skill applies; deep-dive skills handle individual capabilities (analyze, trade, sign, manage wallets, manage agent tokens)."
+description: "Crypto wallet API + CLI for AI agents — install, authentication, and routing to specific Zerion capabilities. Use this skill for setup or to learn which `zerion-*` skill applies; deep-dive skills handle individual capabilities (analyze, trade, sign, manage wallets, manage agent tokens, run DriftGuard autonomous rebalancing)."
 license: MIT
 allowed-tools: Bash
 ---
@@ -71,6 +71,7 @@ export ZERION_MPP=true
 |--------|-------|
 | What's in this wallet? portfolio, positions, history, PnL, watchlist | **`zerion-analyze`** |
 | Swap / bridge / send tokens | **`zerion-trading`** |
+| Autonomous policy-bound portfolio rebalancing | **`zerion-driftguard`** |
 | Sign a message or EIP-712 typed data (no broadcast) | **`zerion-sign`** |
 | Create / import / list / backup / delete wallets | **`zerion-wallet`** |
 | Set up agent tokens + policies for autonomous trading | **`zerion-agent-management`** |

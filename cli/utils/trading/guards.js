@@ -6,7 +6,7 @@
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { resolve, relative, dirname, join } from "node:path";
 import { getAgentToken, listAgentTokens, getPolicy, getWalletNameById, listWallets } from "../wallet/keystore.js";
-import { getConfigValue } from "../config.js";
+import { getConfigValue, getAgentTokenMetaForWallet } from "../config.js";
 import { printError } from "../common/output.js";
 import { confirm } from "../common/prompt.js";
 import agentCreateToken from "../../commands/agent/create-token.js";
@@ -78,19 +78,31 @@ export async function requireAgentToken(context = "", targetWallet) {
  * OWS enforces native rules (allowed_chains, expires_at) but does NOT run
  * executable scripts — we must do it here before signing.
  * @param {{ to: string, value: string|bigint, data: string, chain: string }} txInfo
+ * @param {string} [targetWallet] Wallet whose token policies should be checked.
+ * @param {object} [metadata] Agent/action metadata for executable policies.
  */
-export async function enforceExecutablePolicies(txInfo) {
-  const walletName = getConfigValue("defaultWallet");
+export async function enforceExecutablePolicies(txInfo, targetWallet, metadata = {}) {
+  const walletName = targetWallet || getConfigValue("defaultWallet");
   if (!walletName) return;
 
-  // Find the newest API key for the default wallet
+  // Prefer the active saved token metadata for this wallet. Older configs did
+  // not store token IDs, so fall back to the previous newest-for-wallet rule.
   const tokens = listAgentTokens();
-  const activeKey = tokens
-    .filter((t) => {
-      const wid = t.walletIds?.[0];
-      return wid && getWalletNameById(wid) === walletName;
-    })
-    .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))[0];
+  const activeMeta = getAgentTokenMetaForWallet(walletName);
+  const activeKey = activeMeta?.id
+    ? tokens.find((t) => t.id === activeMeta.id)
+    : tokens
+      .filter((t) => {
+        const wid = t.walletIds?.[0];
+        return wid && getWalletNameById(wid) === walletName;
+      })
+      .sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1))[0];
+  if (activeMeta?.id && !activeKey) {
+    printError("invalid_agent_token", "Active agent token metadata no longer matches an OWS token — blocking transaction", {
+      suggestion: "Create a fresh token: zerion agent create-token --name <name> --wallet <wallet>",
+    });
+    process.exit(1);
+  }
   if (!activeKey?.policyIds?.length) return;
 
   const ctx = {
@@ -98,7 +110,9 @@ export async function enforceExecutablePolicies(txInfo) {
       to: txInfo.to || null,
       value: String(txInfo.value || "0"),
       data: txInfo.data || "0x",
+      chain: txInfo.chain || metadata.fromChain || metadata.chain || null,
     },
+    metadata,
   };
 
   for (const pid of activeKey.policyIds) {
@@ -124,7 +138,7 @@ export async function enforceExecutablePolicies(txInfo) {
       try {
         const mod = await import(pathToFileURL(resolved).href);
         if (typeof mod.check !== "function") continue;
-        const result = mod.check({ ...ctx, policy_config: policy.config });
+        const result = await Promise.resolve(mod.check({ ...ctx, policy_config: policy.config }));
         if (!result.allow) {
           printError("policy_denied", result.reason || "Blocked by policy", {
             policy: policy.name || pid,

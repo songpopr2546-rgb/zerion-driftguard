@@ -300,8 +300,9 @@ export async function getSwapOffers(input) {
  * @param {string} passphrase
  * @param {object} [options]
  * @param {number} [options.timeout] - broadcast timeout in seconds
+ * @param {object} [options.policyMetadata] - agent metadata for policy scripts
  */
-export async function executeSwap(quote, walletName, passphrase, { timeout } = {}) {
+export async function executeSwap(quote, walletName, passphrase, { timeout, policyMetadata = {} } = {}) {
   if (quote.blocking) {
     const err = new Error(
       `Quote not executable: ${quote.blocking.message || quote.blocking.code}` +
@@ -318,18 +319,48 @@ export async function executeSwap(quote, walletName, passphrase, { timeout } = {
     if (!quote.transactionSwapSolana?.raw) {
       throw new Error("Quote did not include a Solana transaction");
     }
-    return executeSolanaSwap(quote, walletName, passphrase);
+    return executeSolanaSwap(quote, walletName, passphrase, policyMetadata);
   }
 
   if (!quote.transactionSwap) {
     throw new Error("Quote did not include an EVM transaction");
   }
 
-  return executeEvmSwap(quote, walletName, passphrase, zerionChainId, { timeout, isCrossChain });
+  return executeEvmSwap(quote, walletName, passphrase, zerionChainId, { timeout, isCrossChain, policyMetadata });
 }
 
-async function executeSolanaSwap(quote, walletName, passphrase) {
+function quotePolicyMetadata(quote, action, extra = {}) {
+  return {
+    source: "zerion_api",
+    action,
+    quoteId: quote.id,
+    fromChain: quote.fromChain,
+    toChain: quote.toChain,
+    fromToken: {
+      symbol: quote.from?.symbol,
+      fungibleId: quote.from?.fungibleId,
+      address: quote.from?.address,
+    },
+    toToken: {
+      symbol: quote.to?.symbol,
+      fungibleId: quote.to?.fungibleId,
+      address: quote.to?.address,
+    },
+    inputAmount: quote.inputAmount,
+    liquiditySource: quote.liquiditySource,
+    ...extra,
+  };
+}
+
+async function executeSolanaSwap(quote, walletName, passphrase, policyMetadata = {}) {
   // Solana txs from the swap API are base64-encoded raw transactions.
+  await enforceExecutablePolicies({
+    to: null,
+    value: "0",
+    data: quote.transactionSwapSolana.raw,
+    chain: quote.fromChain,
+  }, walletName, quotePolicyMetadata(quote, "swap", policyMetadata));
+
   const result = await signAndBroadcastSolana(
     quote.transactionSwapSolana,
     walletName,
@@ -347,7 +378,7 @@ async function executeSolanaSwap(quote, walletName, passphrase) {
   };
 }
 
-async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { timeout, isCrossChain = false } = {}) {
+async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { timeout, isCrossChain = false, policyMetadata = {} } = {}) {
   // Snapshot destination balance before bridge (for delivery detection)
   let preBalance = null;
   if (isCrossChain) {
@@ -372,11 +403,18 @@ async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { ti
     if (alreadyApproved) {
       process.stderr.write(`Existing allowance covers this swap — skipping approval.\n`);
     } else {
+      const decodedApproval = decodeApproveCalldata(approveTx.data);
       await enforceExecutablePolicies({
         to: approveTx.to,
         value: approveTx.value || "0",
         data: approveTx.data,
-      });
+        chain: zerionChainId,
+      }, walletName, quotePolicyMetadata(quote, "approve", {
+        ...policyMetadata,
+        approval: decodedApproval
+          ? { spender: decodedApproval.spender, amount: decodedApproval.amount.toString() }
+          : null,
+      }));
 
       process.stderr.write(`Approving ${quote.from.symbol} for swap...\n`);
       const { signedTxHex, client, tx: signedApprove } = await signSwapTransaction(
@@ -409,7 +447,8 @@ async function executeEvmSwap(quote, walletName, passphrase, zerionChainId, { ti
     to: swapTx.to,
     value: swapTx.value || "0",
     data: swapTx.data,
-  });
+    chain: zerionChainId,
+  }, walletName, quotePolicyMetadata(quote, "swap", policyMetadata));
 
   const swapNonceOverride = approvalNonce != null ? approvalNonce + 1 : undefined;
   const { signedTxHex, client } = await signSwapTransaction(

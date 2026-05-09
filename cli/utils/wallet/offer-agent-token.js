@@ -20,7 +20,13 @@ export async function offerAgentToken(walletName, passphrase) {
     const result = ows.createAgentToken(
       `${walletName}-agent`, walletName, passphrase, undefined, [policyId]
     );
-    saveAgentToken(walletName, result.token);
+    saveAgentToken(walletName, result.token, {
+      id: result.id,
+      name: result.name,
+      wallet: walletName,
+      policyIds: [policyId],
+      createdAt: new Date().toISOString(),
+    });
 
     print({
       agentToken: {

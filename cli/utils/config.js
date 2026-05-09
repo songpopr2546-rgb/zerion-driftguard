@@ -93,10 +93,17 @@ export function getWalletAddresses(wallet, origin) {
  * Agent tokens — stored as { walletName: tokenString } map.
  * Active token is always agentTokens[defaultWallet]. No separate pointer needed.
  */
-export function saveAgentToken(walletName, token) {
+export function saveAgentToken(walletName, token, metadata = null) {
   const tokens = getConfigValue("agentTokens") || {};
   tokens[walletName] = token;
-  setConfigValue("agentTokens", tokens);
+  const config = loadConfig();
+  config.agentTokens = tokens;
+  if (metadata) {
+    const tokenMeta = config.agentTokenMeta || {};
+    tokenMeta[walletName] = metadata;
+    config.agentTokenMeta = tokenMeta;
+  }
+  saveConfig(config);
 }
 
 export function getActiveAgentToken() {
@@ -111,12 +118,22 @@ export function getAgentTokenForWallet(walletName) {
   return tokens[walletName] || null;
 }
 
+export function getAgentTokenMetaForWallet(walletName) {
+  const tokenMeta = getConfigValue("agentTokenMeta") || {};
+  return tokenMeta[walletName] || null;
+}
+
 export function listSavedAgentTokens() {
   return getConfigValue("agentTokens") || {};
 }
 
 export function removeAgentTokensForWallet(walletName) {
-  const tokens = getConfigValue("agentTokens") || {};
+  const config = loadConfig();
+  const tokens = config.agentTokens || {};
   delete tokens[walletName];
-  setConfigValue("agentTokens", tokens);
+  config.agentTokens = tokens;
+  const tokenMeta = config.agentTokenMeta || {};
+  delete tokenMeta[walletName];
+  config.agentTokenMeta = tokenMeta;
+  saveConfig(config);
 }
