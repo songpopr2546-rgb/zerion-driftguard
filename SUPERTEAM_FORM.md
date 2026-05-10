@@ -12,7 +12,11 @@ The recorded demo executed a real BNB Smart Chain rebalance from USDT to BNB thr
 
 ## GitHub Repository
 
-Use the public GitHub repo URL after publishing this project.
+https://github.com/songpopr2546-rgb/zerion-driftguard
+
+## Demo Link
+
+https://github.com/songpopr2546-rgb/zerion-driftguard/blob/main/DEMO.md
 
 ## Demo / Transaction Evidence
 
