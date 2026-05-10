@@ -296,7 +296,7 @@ Policy flags:
 
 DriftGuard is the competition-grade autonomous agent surface: it monitors a wallet's target allocation, decides when drift is large enough to trade, fetches an executable same-chain swap quote from the Zerion API, and signs only when a DriftGuard executable policy approves the action.
 
-For the Frontier submission package, see [`FRONTIER_SUBMISSION.md`](./FRONTIER_SUBMISSION.md) and [`SUBMIT_CHECKLIST.md`](./SUBMIT_CHECKLIST.md). The repeatable terminal demo lives in [`demo/driftguard-demo.sh`](./demo/driftguard-demo.sh).
+For the Frontier submission package, see [`FRONTIER_SUBMISSION.md`](./FRONTIER_SUBMISSION.md), [`DEMO.md`](./DEMO.md), and [`SUBMIT_CHECKLIST.md`](./SUBMIT_CHECKLIST.md). The repeatable terminal demo lives in [`demo/driftguard-demo.sh`](./demo/driftguard-demo.sh).
 
 ```bash
 # 1. Create a tight policy.
