@@ -16,7 +16,7 @@ https://github.com/songpopr2546-rgb/zerion-driftguard
 
 ## Demo Link
 
-https://github.com/songpopr2546-rgb/zerion-driftguard/blob/main/DEMO.md
+https://driftguard-demo-site.vercel.app
 
 ## Demo / Transaction Evidence
 
