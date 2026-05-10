@@ -2,6 +2,11 @@
 
 This page is the fastest way for Frontier / Superteam judges to verify that DriftGuard is a real autonomous onchain agent, not a dry-run mock.
 
+## Demo Video
+
+- Video page: https://driftguard-demo-site.vercel.app
+- Direct MP4: https://driftguard-demo-site.vercel.app/driftguard-demo.mp4
+
 ## One-Line Demo
 
 DriftGuard monitored a BNB Smart Chain wallet, detected that USDT was overweight versus the `USDT=60,BNB=40` target allocation, fetched an executable Zerion API swap quote, passed a scoped DriftGuard policy check, and executed a real USDT -> BNB rebalance.
